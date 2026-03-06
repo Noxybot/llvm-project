@@ -14,6 +14,7 @@
 #ifndef LLVM_FRONTEND_OPENMP_OMPIRBUILDER_H
 #define LLVM_FRONTEND_OPENMP_OMPIRBUILDER_H
 
+#include "llvm/ADT/APSInt.h"
 #include "llvm/ADT/SetVector.h"
 #include "llvm/Frontend/Atomic/Atomic.h"
 #include "llvm/Frontend/OpenMP/OMPConstants.h"
@@ -3926,6 +3927,71 @@ public:
   LLVM_ABI GlobalVariable *
   getOrCreateInternalVariable(Type *Ty, const StringRef &Name,
                               std::optional<unsigned> AddressSpace = {});
+
+  /// Kind of parameter in a function with 'declare simd' directive.
+  enum class DeclareSimdKindTy {
+    Linear,
+    LinearRef,
+    LinearUVal,
+    LinearVal,
+    Uniform,
+    Vector,
+  };
+
+  /// Attribute set of the `declare simd` parameter.
+  struct DeclareSimdAttrTy {
+    DeclareSimdKindTy Kind = DeclareSimdKindTy::Vector;
+    llvm::APSInt StrideOrArg;
+    llvm::APSInt Alignment;
+    bool HasVarStride = false;
+  };
+
+  enum class DeclareSimdBranch {
+    Undefined,
+    Inbranch,
+    Notinbranch,
+  };
+
+  /// Emit x86-specific vector function attributes for an OpenMP `declare simd`
+  /// directive.
+  ///
+  /// This function attaches one or more mangled vector-function-name attributes
+  /// to the given LLVM function, following the x86 Vector Function ABI.
+  ///
+  /// Depending on the branch clause, masked and/or unmasked variants are
+  /// emitted. The vector length is either taken from the explicit `simdlen`
+  /// clause or derived from the characteristic data type (CDT).
+  ///
+  /// \param Fn          The LLVM function corresponding to the scalar version.
+  /// \param NumElements The number of SIMD lanes derived from the target ISA.
+  /// \param VLENVal     Optional explicit SIMD length from the `simdlen`
+  /// clause.
+  /// \param ParamAttrs  Per-parameter SIMD attributes (uniform, linear, etc.).
+  /// \param Branch      The branch behavior specified by the `inbranch` or
+  ///                    `notinbranch` clause.
+  LLVM_ABI void emitX86DeclareSimdFunction(
+      llvm::Function *Fn, unsigned NumElements, const llvm::APSInt &VLENVal,
+      llvm::ArrayRef<DeclareSimdAttrTy> ParamAttrs, DeclareSimdBranch Branch);
+
+  /// Emit vector function attributes for an OpenMP `declare simd` directive.
+  ///
+  /// This is the target-independent entry point used by frontends and IR
+  /// translation layers. It dispatches to a target-specific implementation
+  /// based on the module target triple.
+  ///
+  /// If the target does not support `declare simd` lowering, this function
+  /// reports an error and performs no emission.
+  ///
+  /// \param Fn          The LLVM function corresponding to the scalar version.
+  /// \param VLENVal     Optional explicit SIMD length from the `simdlen`
+  /// clause.
+  /// \param ParamAttrs  Per-parameter SIMD attributes (uniform, linear, etc.).
+  /// \param Branch      The branch behavior specified by the `inbranch` or
+  ///                    `notinbranch` clause.
+  LLVM_ABI void emitDeclareSimdFunction(llvm::Function *Fn,
+                                        const llvm::APSInt &VLENVal,
+                                        ArrayRef<DeclareSimdAttrTy> ParamAttrs,
+                                        DeclareSimdBranch Branch);
 };
 
 /// Class to represented the control flow structure of an OpenMP canonical loop.
