@@ -1379,6 +1379,13 @@ bool DependenceInfo::weakCrossingSIVtest(const SCEVAddRecExpr *Src,
   const SCEV *Coeff = Src->getStepRecurrence(*SE);
   const SCEV *DstCoeff = Dst->getStepRecurrence(*SE);
   assert(Coeff ==  SE->getNegativeSCEV(DstCoeff) && "Not a weak crossing case.");
+  // Coeff is equal to its negative value in two cases:
+  // 1. Coeff is zero. In this case, the subscripts are ZIV.
+  // 2. Coeff is the minimum signed value. In this case, given the previous
+  //    assertion, we conclude that both coefficients are equal and this should
+  //    be processed by strongSIVtest, not WeakCrossingSIVtest.
+  assert(Coeff !=  SE->getNegativeSCEV(Coeff) &&
+         "Coefficient is zero or min signed value");
   const SCEV *SrcConst = Src->getStart();
   const SCEV *DstConst = Dst->getStart();
   LLVM_DEBUG(dbgs() << "\tWeak-Crossing SIV test\n");
