@@ -1377,6 +1377,8 @@ bool DependenceInfo::weakCrossingSIVtest(const SCEVAddRecExpr *Src,
     return false;
 
   const SCEV *Coeff = Src->getStepRecurrence(*SE);
+  const SCEV *DstCoeff = Dst->getStepRecurrence(*SE);
+  assert(Coeff ==  SE->getNegativeSCEV(DstCoeff) && "Not a weak crossing case.");
   const SCEV *SrcConst = Src->getStart();
   const SCEV *DstConst = Dst->getStart();
   LLVM_DEBUG(dbgs() << "\tWeak-Crossing SIV test\n");
