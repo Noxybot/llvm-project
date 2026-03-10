@@ -940,7 +940,7 @@ void RequirementHandler::initAvailableCapabilitiesForVulkan(
                     Capability::StorageBufferArrayDynamicIndexing,
                     Capability::StorageImageArrayDynamicIndexing,
                     Capability::DerivativeControl, Capability::MinLod,
-                    Capability::ImageGatherExtended});
+                    Capability::ImageQuery, Capability::ImageGatherExtended});
 
   // Became core in Vulkan 1.2
   if (ST.isAtLeastSPIRVVer(VersionTuple(1, 5))) {
@@ -1673,6 +1673,13 @@ void addInstrRequirements(const MachineInstr &MI,
     }
     break;
   }
+  case SPIRV::OpImageQueryLod:
+  case SPIRV::OpImageQuerySize:
+  case SPIRV::OpImageQuerySizeLod:
+  case SPIRV::OpImageQueryLevels:
+  case SPIRV::OpImageQuerySamples:
+    Reqs.addCapability(SPIRV::Capability::ImageQuery);
+    break;
   case SPIRV::OpImageQueryFormat: {
     Register ResultReg = MI.getOperand(0).getReg();
     const MachineRegisterInfo &MRI = MI.getMF()->getRegInfo();
