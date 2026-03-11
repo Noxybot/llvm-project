@@ -1,5 +1,5 @@
-; RUN: llc -O0 -mtriple=spirv-vulkan-compute %s -o - | FileCheck %s
-; RUN: %if spirv-tools %{ llc -O0 -mtriple=spirv-vulkan-compute %s -o - -filetype=obj | spirv-val %}
+; RUN: llc -O0 -mtriple=spirv1.6-vulkan1.3-library %s -o - | FileCheck %s
+; RUN: %if spirv-tools %{ llc -O0 -mtriple=spirv1.6-vulkan1.3-library %s -o - -filetype=obj | spirv-val --target-env vulkan1.3 %}
 
 ; CHECK-DAG: %[[float:[0-9]+]] = OpTypeFloat 32
 ; CHECK-DAG: %[[image:[0-9]+]] = OpTypeImage %[[float]] 2D 2 0 0 1 Unknown
@@ -11,7 +11,7 @@
 @.str = private unnamed_addr constant [4 x i8] c"img\00", align 1
 @.str.1 = private unnamed_addr constant [5 x i8] c"samp\00", align 1
 
-define void @main() {
+define void @main() #0 {
 entry:
   %img = tail call target("spirv.Image", float, 1, 2, 0, 0, 1, 0) @llvm.spv.resource.handlefrombinding.tspirv.Image_f32_1_2_0_0_1_0t(i32 0, i32 0, i32 1, i32 0, ptr @.str)
   %sampler = tail call target("spirv.Sampler") @llvm.spv.resource.handlefrombinding.tspirv.Samplert(i32 0, i32 1, i32 1, i32 0, ptr @.str.1)
@@ -33,7 +33,4 @@ entry:
   ret void
 }
 
-declare target("spirv.Image", float, 1, 2, 0, 0, 1, 0) @llvm.spv.resource.handlefrombinding.tspirv.Image_f32_1_2_0_0_1_0t(i32, i32, i32, i32, ptr)
-declare target("spirv.Sampler") @llvm.spv.resource.handlefrombinding.tspirv.Samplert(i32, i32, i32, i32, ptr)
-declare float @llvm.spv.resource.calculate.lod.f32.tspirv.Image_f32_1_2_0_0_1_0t.tspirv.Samplert.v2f32(target("spirv.Image", float, 1, 2, 0, 0, 1, 0), target("spirv.Sampler"), <2 x float>)
-declare float @llvm.spv.resource.calculate.lod.unclamped.f32.tspirv.Image_f32_1_2_0_0_1_0t.tspirv.Samplert.v2f32(target("spirv.Image", float, 1, 2, 0, 0, 1, 0), target("spirv.Sampler"), <2 x float>)
+attributes #0 = { "hlsl.shader"="pixel" }
