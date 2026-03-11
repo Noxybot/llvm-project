@@ -666,6 +666,105 @@ def ROCDL_RawPtrBufferAtomicUminOp : ROCDL_RawPtrBufferAtomicNoRet<"umin">;
 def ROCDL_RawPtrBufferAtomicFaddOp : ROCDL_RawPtrBufferAtomicNoRet<"fadd">;
 
 //===---------------------------------------------------------------------===//
+// Operations on structured buffer resources (stride != 0, includes vindex for
+// bounds checking with idxen=1).
+//===---------------------------------------------------------------------===//
+
+def ROCDL_StructPtrBufferLoadOp :
+  ROCDL_IntrOp<"struct.ptr.buffer.load", [0], [], [], 1, 0, 1> {
+  dag args = (ins Arg<ROCDLBufferRsrc, "", [MemRead]>:$rsrc,
+                  I32:$vindex,
+                  I32:$offset,
+                  I32:$soffset,
+                  I32:$aux);
+  let arguments = !con(args, baseArgs);
+  let assemblyFormat = "operands attr-dict `:` type($res)";
+  let extraClassDefinition = [{
+    ::llvm::SmallVector<::mlir::Value> $cppClass::getAccessedOperands() {
+      return {getRsrc()};
+    }
+  }];
+}
+
+def ROCDL_StructPtrBufferLoadLdsOp :
+  ROCDL_IntrOp<"struct.ptr.buffer.load.lds", [], [], [], 0, 0, 1> {
+  dag args = (ins Arg<ROCDLBufferRsrc, "", [MemRead]>:$rsrc,
+                  Arg<ROCDLBufferLDS, "", [MemWrite]>:$ldsPtr,
+                  I32:$size,
+                  I32:$vindex,
+                  I32:$voffset,
+                  I32:$soffset,
+                  I32:$offset,
+                  I32:$aux);
+  let arguments = !con(args, baseArgs);
+  let assemblyFormat = "operands attr-dict";
+  let extraClassDefinition = [{
+    ::llvm::SmallVector<::mlir::Value> $cppClass::getAccessedOperands() {
+      return {getRsrc(), getLdsPtr()};
+    }
+  }];
+}
+
+def ROCDL_StructPtrBufferStoreOp :
+  ROCDL_IntrOp<"struct.ptr.buffer.store", [], [0], [], 0, 0, 1> {
+  dag args = (ins LLVM_Type:$vdata,
+                  Arg<ROCDLBufferRsrc, "", [MemWrite]>:$rsrc,
+                  I32:$vindex,
+                  I32:$offset,
+                  I32:$soffset,
+                  I32:$aux);
+  let arguments = !con(args, baseArgs);
+  let assemblyFormat = "operands attr-dict `:` type($vdata)";
+  let extraClassDefinition = [{
+    ::llvm::SmallVector<::mlir::Value> $cppClass::getAccessedOperands() {
+      return {getRsrc()};
+    }
+  }];
+}
+
+def ROCDL_StructPtrBufferAtomicCmpSwap :
+  ROCDL_IntrOp<"struct.ptr.buffer.atomic.cmpswap",
+    [0], [], [AllTypesMatch<["res", "src", "cmp"]>], 1, 0, 1> {
+  dag args = (ins LLVM_Type:$src,
+                  LLVM_Type:$cmp,
+                  Arg<ROCDLBufferRsrc, "", [MemRead, MemWrite]>:$rsrc,
+                  I32:$vindex,
+                  I32:$offset,
+                  I32:$soffset,
+                  I32:$aux);
+  let arguments = !con(args, baseArgs);
+  let assemblyFormat = "operands attr-dict `:` type($res)";
+  let extraClassDefinition = [{
+    ::llvm::SmallVector<::mlir::Value> $cppClass::getAccessedOperands() {
+      return {getRsrc()};
+    }
+  }];
+}
+
+class ROCDL_StructPtrBufferAtomicNoRet<string op> :
+  ROCDL_IntrOp<"struct.ptr.buffer.atomic." # op, [], [0], [], 0, 0, 1> {
+  dag args = (ins LLVM_Type:$vdata,
+                  Arg<ROCDLBufferRsrc, "", [MemRead, MemWrite]>:$rsrc,
+                  I32:$vindex,
+                  I32:$offset,
+                  I32:$soffset,
+                  I32:$aux);
+  let arguments = !con(args, baseArgs);
+  let assemblyFormat = "operands attr-dict `:` type($vdata)";
+  let extraClassDefinition = [{
+    ::llvm::SmallVector<::mlir::Value> $cppClass::getAccessedOperands() {
+      return {getRsrc()};
+    }
+  }];
+}
+
+def ROCDL_StructPtrBufferAtomicFmaxOp : ROCDL_StructPtrBufferAtomicNoRet<"fmax">;
+def ROCDL_StructPtrBufferAtomicSmaxOp : ROCDL_StructPtrBufferAtomicNoRet<"smax">;
+def ROCDL_StructPtrBufferAtomicUminOp : ROCDL_StructPtrBufferAtomicNoRet<"umin">;
+// Note: not supported on all architectures
+def ROCDL_StructPtrBufferAtomicFaddOp : ROCDL_StructPtrBufferAtomicNoRet<"fadd">;
+
+//===---------------------------------------------------------------------===//
 // Raw buffer load/store intrinsics
 
 def ROCDL_RawBufferLoadOp :
