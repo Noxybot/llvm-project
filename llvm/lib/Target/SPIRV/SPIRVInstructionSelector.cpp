@@ -4783,9 +4783,8 @@ bool SPIRVInstructionSelector::selectCalculateLodIntrinsic(
   auto *SamplerDef = cast<GIntrinsic>(getVRegDef(*MRI, SamplerReg));
   Register NewSamplerReg =
       MRI->createVirtualRegister(MRI->getRegClass(SamplerReg));
-  if (!loadHandleBeforePosition(NewSamplerReg,
-                                GR.getSPIRVTypeForVReg(SamplerReg), *SamplerDef,
-                                I)) {
+  if (!loadHandleBeforePosition(
+          NewSamplerReg, GR.getSPIRVTypeForVReg(SamplerReg), *SamplerDef, I)) {
     return false;
   }
 
@@ -4803,8 +4802,7 @@ bool SPIRVInstructionSelector::selectCalculateLodIntrinsic(
       .constrainAllUses(TII, TRI, RBI);
 
   SPIRVTypeInst Vec2Ty = GR.getOrCreateSPIRVVectorType(ResType, 2, I, TII);
-  Register QueryResultReg =
-      MRI->createVirtualRegister(GR.getRegClass(Vec2Ty));
+  Register QueryResultReg = MRI->createVirtualRegister(GR.getRegClass(Vec2Ty));
 
   BuildMI(*I.getParent(), I, I.getDebugLoc(), TII.get(SPIRV::OpImageQueryLod))
       .addDef(QueryResultReg)
@@ -4814,14 +4812,17 @@ bool SPIRVInstructionSelector::selectCalculateLodIntrinsic(
       .constrainAllUses(TII, TRI, RBI);
 
   unsigned ExtractedIndex =
-      cast<GIntrinsic>(I).getIntrinsicID() == Intrinsic::spv_resource_calculate_lod_unclamped ? 1 : 0;
+      cast<GIntrinsic>(I).getIntrinsicID() ==
+              Intrinsic::spv_resource_calculate_lod_unclamped
+          ? 1
+          : 0;
 
-  MachineInstrBuilder MIB =
-      BuildMI(*I.getParent(), I, I.getDebugLoc(), TII.get(SPIRV::OpCompositeExtract))
-          .addDef(ResVReg)
-          .addUse(GR.getSPIRVTypeID(ResType))
-          .addUse(QueryResultReg)
-          .addImm(ExtractedIndex);
+  MachineInstrBuilder MIB = BuildMI(*I.getParent(), I, I.getDebugLoc(),
+                                    TII.get(SPIRV::OpCompositeExtract))
+                                .addDef(ResVReg)
+                                .addUse(GR.getSPIRVTypeID(ResType))
+                                .addUse(QueryResultReg)
+                                .addImm(ExtractedIndex);
 
   MIB.constrainAllUses(TII, TRI, RBI);
   return true;

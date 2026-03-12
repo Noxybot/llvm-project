@@ -3469,7 +3469,6 @@ static bool CheckCalculateLodBuiltin(Sema &S, CallExpr *TheCall) {
     return true;
 
   TheCall->setType(S.Context.FloatTy);
-
   return false;
 }
 

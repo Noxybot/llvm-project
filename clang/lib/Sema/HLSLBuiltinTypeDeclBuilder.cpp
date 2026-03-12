@@ -1888,28 +1888,26 @@ BuiltinTypeDeclBuilder::addCalculateLodMethods(ResourceDimension Dim) {
       lookupBuiltinType(SemaRef, "SamplerState", Record->getDeclContext());
   uint32_t VecSize = getResourceDimensions(Dim);
   QualType FloatTy = AST.FloatTy;
-  QualType Float2Ty = AST.getExtVectorType(FloatTy, VecSize);
+  QualType LocationTy = AST.getExtVectorType(FloatTy, VecSize);
   using PH = BuiltinTypeMethodBuilder::PlaceHolder;
 
   // float CalculateLevelOfDetail(SamplerState s, float2 location)
   BuiltinTypeMethodBuilder(*this, "CalculateLevelOfDetail", ReturnType)
       .addParam("Sampler", SamplerStateType)
-      .addParam("Location", Float2Ty)
+      .addParam("Location", LocationTy)
       .accessHandleFieldOnResource(PH::_0)
       .callBuiltin("__builtin_hlsl_resource_calculate_lod", ReturnType,
                    PH::Handle, PH::LastStmt, PH::_1)
-      .returnValue(PH::LastStmt)
       .finalize();
 
   // float CalculateLevelOfDetailUnclamped(SamplerState s, float2 location)
   return BuiltinTypeMethodBuilder(*this, "CalculateLevelOfDetailUnclamped",
                                   ReturnType)
       .addParam("Sampler", SamplerStateType)
-      .addParam("Location", Float2Ty)
+      .addParam("Location", LocationTy)
       .accessHandleFieldOnResource(PH::_0)
       .callBuiltin("__builtin_hlsl_resource_calculate_lod_unclamped",
                    ReturnType, PH::Handle, PH::LastStmt, PH::_1)
-      .returnValue(PH::LastStmt)
       .finalize();
 }
 
